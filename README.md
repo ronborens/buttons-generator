@@ -1,70 +1,114 @@
-# Getting Started with Create React App
+# Buttons Generator — README
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Generate styled `<button>` HTML from simple inputs using the OpenAI Responses API, and safely preview it in a React app.
 
-## Available Scripts
+## Prerequisites
+- Node.js 18+
+- OpenAI API key (with billing or free credits)
+- Ports: UI on 3000, API on 8787 (both configurable)
 
-In the project directory, you can run:
+## Install
+(from project root)
 
-### `npm start`
+    npm install
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Configure
+Create a `.env` file in the project root with at least your API key. Example:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+    OPENAI_API_KEY=sk-your-key
+    # optional
+    OPENAI_MODEL=gpt-4o-mini
+    UI_ORIGIN=http://localhost:3000
+    API_PORT=8787
 
-### `npm test`
+Tip: you can also store the key in `.env.local`. The server loads `.env` by default.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Run
+Use two terminals.
 
-### `npm run build`
+Terminal A — API
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+    npm run server
+    # expected:
+    # OPENAI_API_KEY loaded: ...
+    # API on :8787
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Terminal B — UI
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+    npm start
+    # opens http://localhost:3000
 
-### `npm run eject`
+If the UI port changes (for example 3001), set `REACT_APP_API_BASE=http://localhost:8787` for the UI and restart it.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Test different inputs in the UI
+1) Exact color + big size  
+   Color: `#E51BFC`  
+   Size: `super huge`  
+   Text: `LAUNCH`
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2) Vague color + named size  
+   Color: `very dark`  
+   Size: `large`  
+   Text: `Deploy`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+3) Free-text style (overrides color and size)  
+   Style: `glassmorphism with soft glow`  
+   Text: `OK`  
+   Leave Color and Size blank; they disable when Style has text.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+4) Empty label (Permutations of empty text, color, and/or size will work) 
+   Text: leave empty  
+   Optional Style: `minimal`  
+   The preview still shows a visible button. Padding and border are enforced even with no label.
 
-## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+The preview rebuilds a safe `<button>`: it preserves inline `style` and `data-*`, sets `type="button"`, and forces the label to match your Text exactly.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Test via curl (optional)
+Endpoint: POST http://localhost:8787/api/generate
 
-### Code Splitting
+Color and size path
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+    curl -s -X POST http://localhost:8787/api/generate \
+      -H "Content-Type: application/json" \
+      -d '{"component":"button","text":"LAUNCH","color":"very dark","size":"super huge"}' | python -m json.tool
 
-### Analyzing the Bundle Size
+Free-text style (color and size ignored)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+    curl -s -X POST http://localhost:8787/api/generate \
+      -H "Content-Type: application/json" \
+      -d '{"component":"button","text":"OK","styleVariant":"brutalist high contrast"}' | python -m json.tool
 
-### Making a Progressive Web App
+Empty text
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+    curl -s -X POST http://localhost:8787/api/generate \
+      -H "Content-Type: application/json" \
+      -d '{"component":"button","text":""}' | python -m json.tool
 
-### Advanced Configuration
+Expected JSON shape
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+    {
+      "ok": true,
+      "html": "<button style=\"...\" type=\"button\">LAUNCH</button>",
+      "usage": { "input_tokens": 123, "output_tokens": 45, "total_tokens": 168 }
+    }
 
-### Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## Troubleshooting
+- API key: server prints `OPENAI_API_KEY loaded: sk-...` on start. GET /health returns `ok`. GET /debug/env shows model and port.
+- CORS: set `UI_ORIGIN=http://localhost:3000` in `.env` and restart the server.
+- OpenAI SDK: needs `client.responses.create` and `resp.output_text`. If errors mention `responses`, update the package.
 
-### `npm run build` fails to minify
+    ```
+    npm uninstall openai
+    npm i openai@latest
+    ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Scripts
+- Start API on 8787
+
+    `npm run server`
+
+- Start React dev server on 3000
+
+    `npm start`
