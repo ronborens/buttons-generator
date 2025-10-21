@@ -7,8 +7,7 @@ import './App.css';
 function clampLabel(t) {
   return String(t || '')
     .normalize('NFKC')
-    .replace(/[\n\r\t]/g, ' ')
-    .slice(0, 200);
+    .replace(/[\n\r\t]/g, ' ');
 }
 
 export default function App() {
