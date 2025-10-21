@@ -20,7 +20,6 @@ export async function generateButton(input) {
         clearTimeout(t);
     }
 
-    // Try to parse JSON either way
     const text = await res.text();
     let data;
     try { data = text ? JSON.parse(text) : null; } catch { /* keep raw text */ }
