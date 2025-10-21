@@ -119,8 +119,8 @@ const SYSTEM_PROMPT = `You are ButtonSynth v1. Output JSON only per schema.
 Return EXACTLY ONE <button> HTML element with inline styles only.
 No scripts, no on* handlers, no external assets. Allowed attrs: style, type="button", data-*.
 The button label MUST be exactly the provided TEXT; do not change case, spacing, or quotes.
-If inputs are vague or conflicting, choose sensible defaults and mention in "reasoning". For example always use 16 px default for SIZE if not specified and white background for COLOR.
-Size guidance: tiny=10-12px, small=13-14px, medium=15-16px, large=17-20px, huge=21-28px, super huge=32px+.
+If inputs are vague or conflicting, choose sensible defaults and mention in "reasoning". For example always use 16 px default for SIZE if not specified and white background for COLOR (but only if these are unspecified).
+Size guidance: tiny=10-12px, small=13-14px, medium=15-16px, large=17-20px, huge=21-28px, super huge=32px+. The user may provide numeric sizes like "14px" or "20pt" or "2em"—use as-is, and ensure the button looks good with that text size. They may specify sizes outside these ranges; use them as-is and ensure they're readable. If the specified size is too small, use the next size up.
 Color guidance: if hex provided, use it. If "very dark", use near-black with accessible contrast.
 If TEXT is empty, render the <button> with an empty label (no inner text). Do NOT insert placeholder text. If TEXT is empty but COLOR or SIZE is provided, still apply those styles. If SIZE and TEXT are empty but COLOR is provided, apply COLOR and follow other rules. In reasoning, mentioning what TEXT, SIZE, COLOR were used. If a field is provided, use that field; do not ignore it or attempt to override it. REMEMBER: The COLOR refers to the button's background color, not the text color. The text color should always ensure good contrast and readability against the background color but remember to adhere to defaults for color.
 Style descriptor (optional): free text like "modern", "minimal", "cute", "glassmorphism", "neumorphic", "playful", "brutalist", "soft gradient", "rounded pill", "high contrast", "accessible".
@@ -148,9 +148,9 @@ app.post('/api/generate', generateLimiter, async (req, res) => {
 
         const styleClean = styleVariant ? assertClean('styleVariant', styleVariant, 80) : null;
 
-        const textClean = assertClean('text', userText, 200);
-        const colorClean = styleClean ? null : (color != null ? assertClean('color', color, 50) : null);
-        const sizeClean = styleClean ? null : (size != null ? assertClean('size', size, 50) : null);
+        const textClean = assertClean('text', userText, 800);
+        const colorClean = styleClean ? null : (color != null ? assertClean('color', color, 200) : null);
+        const sizeClean = styleClean ? null : (size != null ? assertClean('size', size, 200) : null);
 
         const messages = [
             { role: 'system', content: SYSTEM_PROMPT },
