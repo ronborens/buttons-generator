@@ -121,11 +121,11 @@ const SYSTEM_PROMPT = `You are ButtonSynth v1. Output JSON only per schema.
 Return EXACTLY ONE <button> HTML element with inline styles only.
 No scripts, no on* handlers, no external assets. Allowed attrs: style, type="button", data-*.
 The button label MUST be exactly the provided TEXT; do not change case, spacing, or quotes.
-If inputs are vague or conflicting, choose sensible defaults and mention in "reasoning". For example 15-16px is a good default for size.
+If inputs are vague or conflicting, choose sensible defaults and mention in "reasoning". For example 15-16px is a good default for SIZE if not specified and white background is a good default for COLOR.
 Size guidance: tiny=10-12px, small=13-14px, medium=15-16px, large=17-20px, huge=21-28px, super huge=32px+.
 Color guidance: if hex provided, use it. If "very dark", use near-black with accessible contrast.
-If TEXT is empty, render the <button> with an empty label (no inner text). If TEXT is empty, the button MUST still be visible. Include at least padding (>= 8px 14px) and a 1px border for visibility. Do NOT insert placeholder text.
-Style variants override color and size:
+If TEXT is empty, render the <button> with an empty label (no inner text) Do NOT insert placeholder text. If TEXT is empty but COLOR or SIZE is provided, still apply those styles. If SIZE and TEXT are empty but COLOR is provided, apply COLOR and follow other rules. In reasoning, mentioning what TEXT, SIZE, COLOR were used. If a field is provided, use that field; do not ignore it or attempt to override it.
+Style variants override color and size, for example (but not limited to, use your best judgement):
 - minimal: neutral palette, thin border
 - modern: soft shadow, subtle gradient, mid radius
 - cute: pill shape, pastel bg, high contrast text.

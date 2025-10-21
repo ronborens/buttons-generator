@@ -67,7 +67,24 @@ export default function App() {
     }
 
     stageRef.current.appendChild(safe);
+    const isEmpty = !exactText || !String(exactText).trim();
 
+    if (isEmpty) {
+      // Use important to beat any global !important resets
+      safe.style.setProperty('border', '1px solid rgba(255,255,255,1)', 'important'); // visible on dark bg
+      safe.style.setProperty('border-radius', '8px', 'important');
+      safe.style.setProperty('min-width', '5px', 'important');
+      safe.style.setProperty('min-height', '10px', 'important');
+
+      // If background is transparent AND your preview is dark, give it a faint bg
+      const bg = getComputedStyle(safe).backgroundColor;
+      const border = getComputedStyle(safe).borderTopWidth;
+      const hasBg = bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent';
+      const hasBorder = border && parseFloat(border) > 0;
+      if (!hasBg && !hasBorder) {
+        safe.style.setProperty('background-color', 'rgba(255,255,255,0.06)', 'important');
+      }
+    }
     // Last-resort: if it still collapses, enforce visibility without adding text
     const rect = safe.getBoundingClientRect();
     if (rect.width < 8 || rect.height < 8) {
