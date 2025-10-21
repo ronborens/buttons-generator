@@ -1,22 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState, useId } from 'react';
+import React, { useCallback, useMemo, useRef, useState, useId } from 'react';
 import { generateButton } from './Api';
 import './index.css';
 import './App.css';
-
-const STYLE_OPTIONS = ['', 'modern', 'minimal', 'cute'];
 
 // Clamp & normalize user-entered text for the request payload only
 function clampLabel(t) {
   return String(t || '')
     .normalize('NFKC')
-    .replace(/[\n\r\t]/g, ' ');
+    .replace(/[\n\r\t]/g, ' ')
+    .slice(0, 200);
 }
 
 export default function App() {
   const [color, setColor] = useState('');
   const [size, setSize] = useState('');
   const [text, setText] = useState('Click me');
-  const [styleVariant, setStyleVariant] = useState('');
+  const [styleVariant, setStyleVariant] = useState(''); // free-text descriptor
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const stageRef = useRef(null);
@@ -27,13 +26,13 @@ export default function App() {
   const textId = useId();
   const styleId = useId();
 
-  const styleLocked = Boolean(styleVariant);
+  const styleLocked = Boolean(String(styleVariant).trim());
 
   // Build payload for the API (client stays dumb; server validates)
   const payload = useMemo(() => {
     const p = {
       text: clampLabel(text),
-      styleVariant: styleVariant || null,
+      styleVariant: styleVariant || null, // when present, server ignores color/size
     };
     if (!styleLocked) {
       p.color = color || null;
@@ -67,16 +66,16 @@ export default function App() {
     }
 
     stageRef.current.appendChild(safe);
+
+    // Hard guarantee for empty labels
     const isEmpty = !exactText || !String(exactText).trim();
-
     if (isEmpty) {
-      // Use important to beat any global !important resets
-      safe.style.setProperty('border', '1px solid rgba(255,255,255,1)', 'important'); // visible on dark bg
+      safe.style.setProperty('padding', '10px 16px', 'important');
+      safe.style.setProperty('border', '1px solid rgba(255,255,255,0.4)', 'important');
       safe.style.setProperty('border-radius', '8px', 'important');
-      safe.style.setProperty('min-width', '5px', 'important');
-      safe.style.setProperty('min-height', '10px', 'important');
+      safe.style.setProperty('min-width', '64px', 'important');
+      safe.style.setProperty('min-height', '36px', 'important');
 
-      // If background is transparent AND your preview is dark, give it a faint bg
       const bg = getComputedStyle(safe).backgroundColor;
       const border = getComputedStyle(safe).borderTopWidth;
       const hasBg = bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent';
@@ -85,7 +84,8 @@ export default function App() {
         safe.style.setProperty('background-color', 'rgba(255,255,255,0.06)', 'important');
       }
     }
-    // Last-resort: if it still collapses, enforce visibility without adding text
+
+    // Last resort if something still collapses
     const rect = safe.getBoundingClientRect();
     if (rect.width < 8 || rect.height < 8) {
       const current = safe.getAttribute('style') || '';
@@ -95,11 +95,10 @@ export default function App() {
     }
   }, []);
 
-
   const onGenerate = useCallback(
     async (e) => {
       e.preventDefault();
-      if (loading) return; // guard
+      if (loading) return;
       setError(null);
       setLoading(true);
 
@@ -117,11 +116,6 @@ export default function App() {
   );
 
   const onBlurTrim = (setter) => (e) => setter(String(e.target.value || '').trim());
-
-  // Prevent invalid style strings from the user by forcing to known options
-  useEffect(() => {
-    if (styleVariant && !STYLE_OPTIONS.includes(styleVariant)) setStyleVariant('');
-  }, [styleVariant]);
 
   return (
     <div className="wrap">
@@ -190,23 +184,20 @@ export default function App() {
 
           <label className="field" htmlFor={styleId}>
             <div className="field-head">
-              <span className="label">Style (bonus)</span>
-              <span className="help">modern | minimal | cute</span>
+              <span className="label">Style (free-text)</span>
+              <span className="help">e.g. modern, minimal, cute, glassmorphism</span>
             </div>
-            {/* Use a select to avoid invalid strings */}
-            <select
+            <input
               id={styleId}
               className="input"
+              placeholder="Describe a style (optional)"
               value={styleVariant}
               onChange={(e) => setStyleVariant(e.target.value)}
+              onBlur={onBlurTrim(setStyleVariant)}
               disabled={loading}
-            >
-              {STYLE_OPTIONS.map((opt) => (
-                <option key={opt || 'none'} value={opt}>
-                  {opt ? opt : '— none —'}
-                </option>
-              ))}
-            </select>
+              autoComplete="off"
+              inputMode="text"
+            />
           </label>
 
           <div className="actions">
@@ -230,7 +221,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* Status area for screen readers */}
           <div aria-live="polite" aria-atomic="true">
             {error && <div className="error">{error}</div>}
           </div>
